@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -12,16 +13,17 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces
 var _ tfsdk.Provider = &provider{}
 
+func New(version string) func() tfsdk.Provider {
+	return func() tfsdk.Provider {
+		return &provider{
+			version: version,
+		}
+	}
+}
+
 // provider satisfies the tfsdk.Provider interface and usually is included
 // with all Resource and DataSource implementations.
 type provider struct {
-	// client can contain the upstream provider SDK or HTTP client used to
-	// communicate with the upstream service. Resource and DataSource
-	// implementations can then make calls using this client.
-	//
-	// TODO: If appropriate, implement upstream provider SDK or HTTP client.
-	// client vendorsdk.ExampleClient
-
 	// configured is set to true at the end of the Configure method.
 	// This can be used in Resource and DataSource implementations to verify
 	// that the provider was previously configured.
@@ -31,11 +33,44 @@ type provider struct {
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
+
+	// includes the configured data
+	data *providerData
 }
 
-// providerData can be used to store data from the Terraform configuration.
-type providerData struct {
-	Example types.String `tfsdk:"example"`
+// GetSchema defines the arguments and attributes of this provider
+func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+	return tfsdk.Schema{
+		Attributes: map[string]tfsdk.Attribute{
+			"definition": {
+				Type:        types.StringType,
+				Required:    true,
+				Description: "",
+			},
+			"variables": {
+				Required:    true,
+				Description: "",
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"name": {
+						Type:     types.StringType,
+						Required: true,
+					},
+					"default": {
+						Type:     types.StringType,
+						Optional: true,
+					},
+					"generated": {
+						Type:     types.BoolType,
+						Optional: true,
+					},
+					"max_length": {
+						Type:     types.Int64Type,
+						Optional: true,
+					},
+				}, tfsdk.ListNestedAttributesOptions{}),
+			},
+		},
+	}, nil
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
@@ -47,45 +82,26 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		return
 	}
 
-	// Configuration values are now available.
-	// if data.Example.Null { /* ... */ }
-
-	// If the upstream provider SDK or HTTP client requires configuration, such
-	// as authentication or logging, this is a great opportunity to do so.
+	diags = validateConvention(&data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	p.configured = true
+	p.data = &data
 }
 
-func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
+// GetResources - Defines provider resources
+func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		"scaffolding_example": exampleResourceType{},
+		"names_name": nameResourceType{},
 	}, nil
 }
 
-func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{
-		"scaffolding_example": exampleDataSourceType{},
-	}, nil
-}
-
-func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"example": {
-				MarkdownDescription: "Example provider attribute",
-				Optional:            true,
-				Type:                types.StringType,
-			},
-		},
-	}, nil
-}
-
-func New(version string) func() tfsdk.Provider {
-	return func() tfsdk.Provider {
-		return &provider{
-			version: version,
-		}
-	}
+// GetDataSources - Defines provider data sources
+func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
+	return map[string]tfsdk.DataSourceType{}, nil
 }
 
 // convertProviderType is a helper function for NewResource and NewDataSource
@@ -115,4 +131,33 @@ func convertProviderType(in tfsdk.Provider) (provider, diag.Diagnostics) {
 	}
 
 	return *p, diags
+}
+
+// validateConvention checks the configured convention to ensure that it can be used without errors
+func validateConvention(providerData *providerData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if !strings.Contains(strings.ToLower(providerData.Definition.Value), "(name)") {
+		diags.AddError(
+			"Convention Validate Error",
+			"The definied convention must include the block '(name)'.",
+		)
+	}
+	missingVariables := []string{}
+
+	for _, variable := range providerData.Variables {
+		block := fmt.Sprintf("(%s)", variable.Name.Value)
+		if !strings.Contains(strings.ToLower(providerData.Definition.Value), block) {
+			missingVariables = append(missingVariables, block)
+		}
+
+	}
+	if len(missingVariables) > 0 {
+		diags.AddError(
+			"Convention Validate Error",
+			fmt.Sprintf("The definied convention must include all variables blocks. Missing blocks: %s", strings.Join(missingVariables, ", ")),
+		)
+	}
+
+	return diags
 }
