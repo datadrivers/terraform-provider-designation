@@ -1,4 +1,4 @@
-module github.com/datadrivers/terraform-provider-names
+module github.com/datadrivers/terraform-provider-convention
 
 go 1.17
 

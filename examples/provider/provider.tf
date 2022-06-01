@@ -1,4 +1,4 @@
-provider "names" {
+provider "convention" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
