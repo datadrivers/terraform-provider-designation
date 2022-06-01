@@ -39,15 +39,15 @@ provider "convention" {
 
 ### Required
 
-- `definition` (String)
-- `variables` (Attributes List) (see [below for nested schema](#nestedatt--variables))
+- `definition` (String) The definition of the convention. Must include the block `(name)` and all variable blocks.
+- `variables` (Attributes List) A list of variable definition used in the convention definition. (see [below for nested schema](#nestedatt--variables))
 
 <a id="nestedatt--variables"></a>
 ### Nested Schema for `variables`
 
 Required:
 
-- `default` (String)
-- `generated` (Boolean)
-- `max_length` (Number)
-- `name` (String)
+- `default` (String) Define a default value
+- `generated` (Boolean) Activates the generation of a random string
+- `max_length` (Number) Set the size limit of the value. Required if value is generated
+- `name` (String) Name of the variable

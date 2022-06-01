@@ -43,29 +43,33 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"definition": {
-				Type:        types.StringType,
-				Required:    true,
-				Description: "",
+				Type:                types.StringType,
+				Required:            true,
+				MarkdownDescription: "The definition of the convention. Must include the block `(name)` and all variable blocks.",
 			},
 			"variables": {
-				Required:    true,
-				Description: "",
+				Required:            true,
+				MarkdownDescription: "A list of variable definition used in the convention definition.",
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
-						Type:     types.StringType,
-						Required: true,
+						Type:                types.StringType,
+						Required:            true,
+						MarkdownDescription: "Name of the variable",
 					},
 					"default": {
-						Type:     types.StringType,
-						Optional: true,
+						Type:                types.StringType,
+						Optional:            true,
+						MarkdownDescription: "Define a default value",
 					},
 					"generated": {
-						Type:     types.BoolType,
-						Optional: true,
+						Type:                types.BoolType,
+						Optional:            true,
+						MarkdownDescription: "Activates the generation of a random string",
 					},
 					"max_length": {
-						Type:     types.Int64Type,
-						Optional: true,
+						Type:                types.Int64Type,
+						Optional:            true,
+						MarkdownDescription: "Set the size limit of the value. Required if value is generated",
 					},
 				}, tfsdk.ListNestedAttributesOptions{}),
 			},

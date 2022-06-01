@@ -92,7 +92,7 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 		return
 	}
 
-	result, diags := generateName(data.Name.Value, inputs, r.provider.data.Variables, r.provider.data.Definition)
+	result, diags := generateName(data.Name.Value, inputs, r.provider.data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -149,7 +149,7 @@ func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 		return
 	}
 
-	result, diags := generateName(data.Name.Value, inputs, r.provider.data.Variables, r.provider.data.Definition)
+	result, diags := generateName(data.Name.Value, inputs, r.provider.data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -193,22 +193,27 @@ func validateInputs(inputs map[string]string, variables []Variable) diag.Diagnos
 }
 
 // generateName generates the name with the inputs, variables and definition
-func generateName(name string, inputs map[string]string, variables []Variable, definition types.String) (types.String, diag.Diagnostics) {
+func generateName(name string, inputs map[string]string, providerData *providerData) (types.String, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	result := strings.Replace(definition.Value, "(name)", name, -1)
+	result := strings.Replace(providerData.Definition.Value, "(name)", name, -1)
 
-	for _, variable := range variables {
+	for _, variable := range providerData.Variables {
 		block := fmt.Sprintf("(%s)", variable.Name.Value)
 		replacement := inputs[variable.Name.Value]
+		length := 0
+
+		if !variable.MaxLength.Null && variable.MaxLength.Value > int64(0) {
+			length = int(variable.MaxLength.Value)
+		}
 		if variable.Generated.Value {
-			length := 8
-			if !variable.MaxLength.Null && variable.MaxLength.Value > int64(0) {
-				length = int(variable.MaxLength.Value)
-			}
 			replacement = rand.String(length)
 		}
+
 		if replacement == "" {
 			replacement = variable.Default.Value
+		}
+		if length > 0 && len(replacement) > length {
+			replacement = replacement[0:length]
 		}
 		result = strings.Replace(result, block, replacement, -1)
 	}
