@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -25,27 +26,32 @@ func (r nameResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagn
 			"id": {
 				Computed:            true,
 				MarkdownDescription: "The name identifier",
+				Type:                types.StringType,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					tfsdk.UseStateForUnknown(),
 				},
-				Type: types.StringType,
 			},
 			"name": {
 				MarkdownDescription: "This is the required convention option for the name",
-				Type:                types.StringType,
 				Required:            true,
+				Type:                types.StringType,
 			},
 			"inputs": {
 				MarkdownDescription: "Map of input values for variables in provider defined convention",
+				Required:            true,
 				Type: types.MapType{
 					ElemType: types.StringType,
 				},
-				Required: true,
+			},
+			"convention": {
+				MarkdownDescription: "The validated convention formated as a json string",
+				Required:            true,
+				Type:                types.StringType,
 			},
 			"result": {
+				Computed:            true,
 				MarkdownDescription: "The result is the generated name.",
 				Type:                types.StringType,
-				Computed:            true,
 			},
 		},
 	}, nil
@@ -74,34 +80,43 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 		return
 	}
 
-	var data nameResourceData
-	diags := req.Config.Get(ctx, &data)
+	var resourceData nameResourceData
+	diags := req.Config.Get(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var convention Convention
+	if err := json.Unmarshal([]byte(resourceData.Convention.Value), &convention); err != nil {
+		resp.Diagnostics.AddError(
+			"Convention Reading Error",
+			err.Error(),
+		)
 		return
 	}
 
 	inputs := map[string]string{}
-	for key, value := range data.Inputs.Elems {
+	for key, value := range resourceData.Inputs.Elems {
 		inputs[key] = value.(types.String).Value
 	}
 
-	diags = validateInputs(inputs, r.provider.data.Variables)
+	diags = validateInputs(inputs, convention.Variables)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	result, diags := generateName(data.Name.Value, inputs, r.provider.data)
+	result, diags := generateName(resourceData.Name.Value, inputs, &convention)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	data.ID = data.Name
-	data.Result = result
+	resourceData.ID = types.String{Value: fmt.Sprintf("%s/%s", convention.Definition, resourceData.Name.Value)}
+	resourceData.Result = result
 
-	diags = resp.State.Set(ctx, data)
+	diags = resp.State.Set(ctx, resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -110,14 +125,14 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 
 // Read resource information
 func (r nameResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	var data nameResourceData
-	diags := req.State.Get(ctx, &data)
+	var resourceData nameResourceData
+	diags := req.State.Get(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -131,33 +146,42 @@ func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 		return
 	}
 
-	var data nameResourceData
-	diags := req.Config.Get(ctx, &data)
+	var resourceData nameResourceData
+	diags := req.Config.Get(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var convention Convention
+	if err := json.Unmarshal([]byte(resourceData.Convention.Value), &convention); err != nil {
+		resp.Diagnostics.AddError(
+			"Convention Reading Error",
+			err.Error(),
+		)
 		return
 	}
 
 	inputs := map[string]string{}
-	for key, value := range data.Inputs.Elems {
+	for key, value := range resourceData.Inputs.Elems {
 		inputs[key] = value.(types.String).Value
 	}
 
-	diags = validateInputs(inputs, r.provider.data.Variables)
+	diags = validateInputs(inputs, convention.Variables)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	result, diags := generateName(data.Name.Value, inputs, r.provider.data)
+	result, diags := generateName(resourceData.Name.Value, inputs, &convention)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	data.Result = result
+	resourceData.Result = result
 
-	diags = resp.State.Set(ctx, data)
+	diags = resp.State.Set(ctx, resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -193,11 +217,11 @@ func validateInputs(inputs map[string]string, variables []Variable) diag.Diagnos
 }
 
 // generateName generates the name with the inputs, variables and definition
-func generateName(name string, inputs map[string]string, providerData *providerData) (types.String, diag.Diagnostics) {
+func generateName(name string, inputs map[string]string, convention *Convention) (types.String, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	result := strings.Replace(providerData.Definition.Value, "(name)", name, -1)
+	result := strings.Replace(convention.Definition, "(name)", name, -1)
 
-	for _, variable := range providerData.Variables {
+	for _, variable := range convention.Variables {
 		block := fmt.Sprintf("(%s)", variable.Name.Value)
 		replacement := inputs[variable.Name.Value]
 		length := 0

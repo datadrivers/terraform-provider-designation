@@ -13,7 +13,7 @@ This resource is used to get a name with the in provider configured convention
 ## Example Usage
 
 ```terraform
-provider "convention" {
+resource "convention_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
@@ -34,19 +34,22 @@ provider "convention" {
 }
 
 resource "convention_name" "sql" {
-  name = "one"
+  name       = "one"
+  convention = convention_convention.this.convention
   inputs = {
     "region" = "ne"
   }
 }
 
 resource "convention_name" "web" {
-  name   = "two"
-  inputs = {}
+  name       = "two"
+  convention = convention_convention.this.convention
+  inputs     = {}
 }
 
 resource "convention_name" "app" {
-  name = "three"
+  name       = "three"
+  convention = convention_convention.this.convention
   inputs = {
     "stage" = "test"
   }
@@ -70,6 +73,7 @@ output "name_app" {
 
 ### Required
 
+- `convention` (String) The validated convention formated as a json string
 - `inputs` (Map of String) Map of input values for variables in provider defined convention
 - `name` (String) This is the required convention option for the name
 

@@ -6,16 +6,25 @@ import (
 
 // NameResource -
 type nameResourceData struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	Inputs types.Map    `tfsdk:"inputs"`
-	Result types.String `tfsdk:"result"`
+	ID         types.String `tfsdk:"id"`
+	Convention types.String `tfsdk:"convention"`
+	Name       types.String `tfsdk:"name"`
+	Inputs     types.Map    `tfsdk:"inputs"`
+	Result     types.String `tfsdk:"result"`
 }
 
 // Provider schema struct
-type providerData struct {
+type conventionResourceData struct {
+	ID         types.String `tfsdk:"id"`
 	Definition types.String `tfsdk:"definition"`
 	Variables  []Variable   `tfsdk:"variables"`
+	Convention types.String `tfsdk:"convention"`
+}
+
+// Convention contains the validated convention
+type Convention struct {
+	Definition string     `json:"definition"`
+	Variables  []Variable `json:"variables"`
 }
 
 // Variable -
