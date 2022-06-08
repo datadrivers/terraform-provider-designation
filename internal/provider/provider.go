@@ -3,11 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -33,73 +31,22 @@ type provider struct {
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
-
-	// includes the configured data
-	data *providerData
 }
 
 // GetSchema defines the arguments and attributes of this provider
 func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"definition": {
-				Type:                types.StringType,
-				Required:            true,
-				MarkdownDescription: "The definition of the convention. Must include the block `(name)` and all variable blocks.",
-			},
-			"variables": {
-				Required:            true,
-				MarkdownDescription: "A list of variable definition used in the convention definition.",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						Type:                types.StringType,
-						Required:            true,
-						MarkdownDescription: "Name of the variable",
-					},
-					"default": {
-						Type:                types.StringType,
-						Optional:            true,
-						MarkdownDescription: "Define a default value",
-					},
-					"generated": {
-						Type:                types.BoolType,
-						Optional:            true,
-						MarkdownDescription: "Activates the generation of a random string",
-					},
-					"max_length": {
-						Type:                types.Int64Type,
-						Optional:            true,
-						MarkdownDescription: "Set the size limit of the value. Required if value is generated",
-					},
-				}, tfsdk.ListNestedAttributesOptions{}),
-			},
-		},
-	}, nil
+	return tfsdk.Schema{}, nil
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
-	var data providerData
-	diags := req.Config.Get(ctx, &data)
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	diags = validateConvention(&data)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	p.configured = true
-	p.data = &data
 }
 
 // GetResources - Defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		"convention_name": nameResourceType{},
+		"convention_name":       nameResourceType{},
+		"convention_convention": conventionResourceType{},
 	}, nil
 }
 
@@ -135,33 +82,4 @@ func convertProviderType(in tfsdk.Provider) (provider, diag.Diagnostics) {
 	}
 
 	return *p, diags
-}
-
-// validateConvention checks the configured convention to ensure that it can be used without errors
-func validateConvention(providerData *providerData) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	if !strings.Contains(strings.ToLower(providerData.Definition.Value), "(name)") {
-		diags.AddError(
-			"Convention Validate Error",
-			"The definied convention must include the block '(name)'.",
-		)
-	}
-	missingVariables := []string{}
-
-	for _, variable := range providerData.Variables {
-		block := fmt.Sprintf("(%s)", variable.Name.Value)
-		if !strings.Contains(strings.ToLower(providerData.Definition.Value), block) {
-			missingVariables = append(missingVariables, block)
-		}
-
-	}
-	if len(missingVariables) > 0 {
-		diags.AddError(
-			"Convention Validate Error",
-			fmt.Sprintf("The definied convention must include all variables blocks. Missing blocks: %s", strings.Join(missingVariables, ", ")),
-		)
-	}
-
-	return diags
 }

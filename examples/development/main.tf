@@ -6,8 +6,9 @@ terraform {
     }
   }
 }
+provider "convention" {}
 
-provider "convention" {
+resource "convention_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
@@ -28,6 +29,8 @@ provider "convention" {
 }
 
 resource "convention_name" "sql" {
+  convention = convention_convention.this.convention
+
   name = "one"
   inputs = {
     "region" = "ne"
@@ -35,11 +38,15 @@ resource "convention_name" "sql" {
 }
 
 resource "convention_name" "web" {
+  convention = convention_convention.this.convention
+
   name   = "two"
   inputs = {}
 }
 
 resource "convention_name" "app" {
+  convention = convention_convention.this.convention
+
   name = "three"
   inputs = {
     "stage" = "test"

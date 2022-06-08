@@ -1,4 +1,4 @@
-provider "convention" {
+resource "convention_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
@@ -19,19 +19,22 @@ provider "convention" {
 }
 
 resource "convention_name" "sql" {
-  name = "one"
+  name       = "one"
+  convention = convention_convention.this.convention
   inputs = {
     "region" = "ne"
   }
 }
 
 resource "convention_name" "web" {
-  name   = "two"
-  inputs = {}
+  name       = "two"
+  convention = convention_convention.this.convention
+  inputs     = {}
 }
 
 resource "convention_name" "app" {
-  name = "three"
+  name       = "three"
+  convention = convention_convention.this.convention
   inputs = {
     "stage" = "test"
   }
