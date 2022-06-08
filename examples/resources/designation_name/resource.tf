@@ -1,4 +1,4 @@
-resource "convention_convention" "this" {
+resource "designation_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
@@ -18,36 +18,36 @@ resource "convention_convention" "this" {
   ]
 }
 
-resource "convention_name" "sql" {
+resource "designation_name" "sql" {
   name       = "one"
-  convention = convention_convention.this.convention
+  convention = designation_convention.this.convention
   inputs = {
     "region" = "ne"
   }
 }
 
-resource "convention_name" "web" {
+resource "designation_name" "web" {
   name       = "two"
-  convention = convention_convention.this.convention
+  convention = designation_convention.this.convention
   inputs     = {}
 }
 
-resource "convention_name" "app" {
+resource "designation_name" "app" {
   name       = "three"
-  convention = convention_convention.this.convention
+  convention = designation_convention.this.convention
   inputs = {
     "stage" = "test"
   }
 }
 
 output "name_web" {
-  value = convention_name.web.result
+  value = designation_name.web.result
 }
 
 output "name_sql" {
-  value = convention_name.sql.result
+  value = designation_name.sql.result
 }
 
 output "name_app" {
-  value = convention_name.app.result
+  value = designation_name.app.result
 }

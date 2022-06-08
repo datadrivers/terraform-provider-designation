@@ -1,4 +1,4 @@
-# Terraform Provider Convention (Terraform Plugin Framework)
+# Terraform Provider Designation (Terraform Plugin Framework)
 
 ## Requirements
 

@@ -1,1 +1,1 @@
-provider "convention" {}
+provider "designation" {}

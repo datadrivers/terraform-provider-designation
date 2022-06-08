@@ -45,8 +45,8 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 // GetResources - Defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		"convention_name":       nameResourceType{},
-		"convention_convention": conventionResourceType{},
+		"designation_name":       nameResourceType{},
+		"designation_convention": conventionResourceType{},
 	}, nil
 }
 

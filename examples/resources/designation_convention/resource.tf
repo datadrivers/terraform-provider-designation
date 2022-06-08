@@ -1,4 +1,4 @@
-resource "convention_convention" "this" {
+resource "designation_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
