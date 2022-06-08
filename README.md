@@ -44,3 +44,10 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 ```shell
 make testacc
 ```
+
+## Create Release
+
+```shell script
+cz bump --changelog
+git push --tags
+```
