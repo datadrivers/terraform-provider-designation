@@ -21,7 +21,7 @@ type nameResourceType struct{}
 // Convention Resource schema
 func (r nameResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
-		MarkdownDescription: "This resource is used to get a name with the in provider configured convention",
+		MarkdownDescription: "This resource is used to get a name with a configured convention",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				Computed:            true,

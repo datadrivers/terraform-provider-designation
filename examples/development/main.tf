@@ -1,14 +1,14 @@
 terraform {
   required_version = ">= 0.14"
   required_providers {
-    convention = {
-      source = "datadrivers/convention"
+    designation = {
+      source = "datadrivers/designation"
     }
   }
 }
-provider "convention" {}
+provider "designation" {}
 
-resource "convention_convention" "this" {
+resource "designation_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
     {
@@ -28,8 +28,8 @@ resource "convention_convention" "this" {
   ]
 }
 
-resource "convention_name" "sql" {
-  convention = convention_convention.this.convention
+resource "designation_name" "sql" {
+  convention = designation_convention.this.convention
 
   name = "one"
   inputs = {
@@ -37,15 +37,15 @@ resource "convention_name" "sql" {
   }
 }
 
-resource "convention_name" "web" {
-  convention = convention_convention.this.convention
+resource "designation_name" "web" {
+  convention = designation_convention.this.convention
 
   name   = "two"
   inputs = {}
 }
 
-resource "convention_name" "app" {
-  convention = convention_convention.this.convention
+resource "designation_name" "app" {
+  convention = designation_convention.this.convention
 
   name = "three"
   inputs = {
@@ -54,13 +54,13 @@ resource "convention_name" "app" {
 }
 
 output "name_web" {
-  value = convention_name.web.result
+  value = designation_name.web.result
 }
 
 output "name_sql" {
-  value = convention_name.sql.result
+  value = designation_name.sql.result
 }
 
 output "name_app" {
-  value = convention_name.app.result
+  value = designation_name.app.result
 }

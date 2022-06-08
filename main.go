@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/datadrivers/terraform-provider-convention/internal/provider"
+	"github.com/datadrivers/terraform-provider-designation/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -36,7 +36,7 @@ func main() {
 
 	opts := providerserver.ServeOpts{
 		// TODO: Update this string with the published name of your provider.
-		Address: "registry.terraform.io/datadrivers/convention",
+		Address: "registry.terraform.io/datadrivers/designation",
 		Debug:   debug,
 	}
 
