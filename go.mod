@@ -3,7 +3,7 @@ module github.com/datadrivers/terraform-provider-designation
 go 1.17
 
 require (
-	github.com/hashicorp/terraform-plugin-docs v0.9.0
+	github.com/hashicorp/terraform-plugin-docs v0.10.1
 	github.com/hashicorp/terraform-plugin-framework v0.8.0
 	k8s.io/apimachinery v0.24.1
 )
