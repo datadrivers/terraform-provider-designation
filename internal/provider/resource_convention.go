@@ -62,7 +62,7 @@ func (r conventionResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						Optional:            true,
 						Type:                types.Int64Type,
 					},
-				}, tfsdk.ListNestedAttributesOptions{}),
+				}),
 			},
 			"convention": {
 				MarkdownDescription: "The validated convention formated as a json string",
