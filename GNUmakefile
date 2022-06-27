@@ -5,6 +5,9 @@ default: testacc
 build: fmt
 	go build -v .
 
+test:
+	go test ./... -v $(TESTARGS)
+
 testacc:
 	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m
 

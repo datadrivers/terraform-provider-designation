@@ -199,8 +199,8 @@ func validateInputs(inputs map[string]string, variables []Variable) diag.Diagnos
 
 	missingInputs := []string{}
 	for _, variable := range variables {
-		if variable.Default.Null && !variable.Generated.Value {
-			if inputs[variable.Name.Value] != "" {
+		if variable.Default.IsNull() && (variable.Generated.IsNull() || !variable.Generated.Value) {
+			if _, ok := inputs[variable.Name.Value]; !ok {
 				missingInputs = append(missingInputs, variable.Name.Value)
 			}
 		}
@@ -209,7 +209,7 @@ func validateInputs(inputs map[string]string, variables []Variable) diag.Diagnos
 	if len(missingInputs) > 0 {
 		diags.AddError(
 			"Convention Usage Error",
-			fmt.Sprintf("All provider variables that are not generated or have a default must be present. Missing inputs: %s", strings.Join(missingInputs, ", ")),
+			fmt.Sprintf("All convention variables that are not generated or have a default must be present. Missing inputs: %s", strings.Join(missingInputs, ", ")),
 		)
 	}
 

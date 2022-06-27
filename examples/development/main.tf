@@ -1,13 +1,3 @@
-terraform {
-  required_version = ">= 0.14"
-  required_providers {
-    designation = {
-      source = "datadrivers/designation"
-    }
-  }
-}
-provider "designation" {}
-
 resource "designation_convention" "this" {
   definition = "(region)-(stage)-(name)-(random)"
   variables = [
