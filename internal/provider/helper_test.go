@@ -82,6 +82,61 @@ func TestGenerateName(t *testing.T) {
 		Definition: "(name)-(not-generated)-(default)-(generated)",
 		Variables: []Variable{
 			{
+				Name: types.String{Value: "not-generated"},
+				Generated: types.Bool{
+					Null:  true,
+					Value: false,
+				},
+				Default: types.String{
+					Null: true,
+				},
+				MaxLength: types.Int64{
+					Null: true,
+				},
+			},
+			{
+				Name: types.String{Value: "generated"},
+				Generated: types.Bool{
+					Value: true,
+					Null:  false,
+				},
+				MaxLength: types.Int64{
+					Null:  false,
+					Value: int64(4),
+				},
+			},
+			{
+				Name: types.String{Value: "default"},
+				Generated: types.Bool{
+					Null: true,
+				},
+				Default: types.String{
+					Null:  false,
+					Value: "default",
+				},
+				MaxLength: types.Int64{
+					Null: true,
+				},
+			},
+		},
+	}
+
+	inputs := map[string]string{
+		"not-generated": "bar",
+	}
+
+	result, diags := generateName(name, inputs, convention)
+	assert.False(t, diags.HasError())
+	assert.Contains(t, result.Value, "foobar-bar-default-")
+	assert.Len(t, result.Value, 23)
+}
+
+func TestGenerateNameWithConfiguredNameVariable(t *testing.T) {
+	name := "foobar"
+	convention := Convention{
+		Definition: "(name)-(not-generated)-(default)-(generated)",
+		Variables: []Variable{
+			{
 				Name: types.String{Value: "name"},
 				Generated: types.Bool{
 					Null: true,
