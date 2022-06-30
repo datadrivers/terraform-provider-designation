@@ -37,12 +37,14 @@ func generateName(name string, inputs map[string]string, convention Convention) 
 	var diags diag.Diagnostics
 
 	result := convention.Definition
+	variableNameConfigured := false
 
 	for _, variable := range convention.Variables {
 		block := fmt.Sprintf("(%s)", variable.Name.Value)
 		replacement := inputs[variable.Name.Value]
 		if variable.Name.Value == "name" {
 			replacement = name
+			variableNameConfigured = true
 		}
 		length := 0
 
@@ -62,6 +64,10 @@ func generateName(name string, inputs map[string]string, convention Convention) 
 			replacement = replacement[0:length]
 		}
 		result = strings.Replace(result, block, replacement, -1)
+	}
+
+	if !variableNameConfigured {
+		result = strings.Replace(result, "(name)", name, -1)
 	}
 
 	return types.String{Value: result}, diags
