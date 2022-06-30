@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.11.0
 	github.com/hashicorp/terraform-plugin-framework v0.9.0
-	github.com/stretchr/testify v1.7.5
+	github.com/stretchr/testify v1.8.0
 	k8s.io/apimachinery v0.24.2
 )
 
