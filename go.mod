@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.12.0
 	github.com/hashicorp/terraform-plugin-framework v0.9.0
 	github.com/stretchr/testify v1.8.0
-	k8s.io/apimachinery v0.24.3
+	k8s.io/apimachinery v0.25.0
 )
 
 require (
@@ -54,8 +54,8 @@ require (
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20201019141844-1ed22bb0c154 // indirect
