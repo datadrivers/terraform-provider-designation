@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.12.0
 	github.com/hashicorp/terraform-plugin-framework v0.9.0
 	github.com/stretchr/testify v1.8.1
-	k8s.io/apimachinery v0.25.0
+	k8s.io/apimachinery v0.25.3
 )
 
 require (
