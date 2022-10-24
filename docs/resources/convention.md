@@ -52,9 +52,12 @@ resource "designation_convention" "this" {
 
 Required:
 
+- `name` (String) Name of the variable
+
+Optional:
+
 - `default` (String) Define a default value
 - `generated` (Boolean) Activates the generation of a random string
 - `max_length` (Number) Set the size limit of the value. Required if value is generated
-- `name` (String) Name of the variable
 
 
