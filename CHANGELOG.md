@@ -1,3 +1,28 @@
+## v0.3.1 (2022-12-30)
+
+### Fix
+
+- Migrate provider to new terraform-provider-framework version
+
+## v0.3.3 (2022-06-30)
+
+### Fix
+
+- **designation_name**: Fix handling of unset name variable
+
+## v0.3.2 (2022-06-27)
+
+### Fix
+
+- **name**: Fix validation and handling of name variable
+
+## v0.3.1 (2022-06-27)
+
+### Fix
+
+- **name**: Fix input validation of resource_name and add tests
+- Remove ListNestedAttributesOptions in schema
+
 ## v0.3.0 (2022-06-08)
 
 ### Feat
