@@ -8,57 +8,70 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateInputs(t *testing.T) {
+func TestVariableConversion(t *testing.T) {
+	var conversionVariables []ConventionVariable
+	var newVariables []Variable
 	variables := []Variable{
 		{
-			Name: types.String{Value: "name"},
-			Generated: types.Bool{
-				Null: true,
-			},
-			Default: types.String{
-				Null: true,
-			},
-			MaxLength: types.Int64{
-				Null:  false,
-				Value: int64(8),
-			},
+			Name:      types.StringValue("name"),
+			Generated: types.BoolNull(),
+			Default:   types.StringNull(),
+			MaxLength: types.Int64Value(int64(8)),
 		},
 		{
-			Name: types.String{Value: "not-generated"},
-			Generated: types.Bool{
-				Null:  true,
-				Value: false,
-			},
-			Default: types.String{
-				Null: true,
-			},
-			MaxLength: types.Int64{
-				Null: true,
-			},
+			Name:      types.StringValue("not-generated"),
+			Generated: types.BoolValue(false),
+			Default:   types.StringNull(),
+			MaxLength: types.Int64Null(),
 		},
 		{
-			Name:      types.String{Value: "generated"},
-			Generated: types.Bool{Value: true},
-			Default: types.String{
-				Null: true,
-			},
-			MaxLength: types.Int64{
-				Null: true,
-			},
+			Name:      types.StringValue("generated"),
+			Generated: types.BoolValue(true),
+			Default:   types.StringNull(),
+			MaxLength: types.Int64Null(),
 		},
 		{
-			Name: types.String{Value: "default"},
-			Generated: types.Bool{
-				Null: true,
-			},
-			Default: types.String{
-				Null:  false,
-				Value: "default",
-			},
-			MaxLength: types.Int64{
-				Null: true,
-			},
+			Name:      types.StringValue("default"),
+			Generated: types.BoolNull(),
+			Default:   types.StringValue("default"),
+			MaxLength: types.Int64Null(),
 		},
+	}
+
+	for _, v := range variables {
+		conversionVariables = append(conversionVariables, convertVariableToConventionVariable(v))
+	}
+	for _, v := range conversionVariables {
+		newVariables = append(newVariables, convertConventionVariableToVariable(v))
+	}
+	assert.Equal(t, variables, newVariables)
+}
+func TestValidateInputs(t *testing.T) {
+	variables := []ConventionVariable{
+		convertVariableToConventionVariable(Variable{
+			Name:      types.StringValue("name"),
+			Generated: types.BoolNull(),
+			Default:   types.StringNull(),
+			MaxLength: types.Int64Value(int64(8)),
+		}),
+		convertVariableToConventionVariable(Variable{
+			Name:      types.StringValue("not-generated"),
+			Generated: types.BoolValue(false),
+			Default:   types.StringNull(),
+			MaxLength: types.Int64Null(),
+		}),
+		convertVariableToConventionVariable(Variable{
+			Name:      types.StringValue("generated"),
+			Generated: types.BoolValue(true),
+			Default:   types.StringNull(),
+			MaxLength: types.Int64Null(),
+		}),
+		convertVariableToConventionVariable(Variable{
+			Name:      types.StringValue("default"),
+			Generated: types.BoolNull(),
+			Default:   types.StringValue("default"),
+			MaxLength: types.Int64Null(),
+		}),
 	}
 
 	inputs := map[string]string{
@@ -80,44 +93,25 @@ func TestGenerateName(t *testing.T) {
 	name := "foobar"
 	convention := Convention{
 		Definition: "(name)-(not-generated)-(default)-(generated)",
-		Variables: []Variable{
-			{
-				Name: types.String{Value: "not-generated"},
-				Generated: types.Bool{
-					Null:  true,
-					Value: false,
-				},
-				Default: types.String{
-					Null: true,
-				},
-				MaxLength: types.Int64{
-					Null: true,
-				},
-			},
-			{
-				Name: types.String{Value: "generated"},
-				Generated: types.Bool{
-					Value: true,
-					Null:  false,
-				},
-				MaxLength: types.Int64{
-					Null:  false,
-					Value: int64(4),
-				},
-			},
-			{
-				Name: types.String{Value: "default"},
-				Generated: types.Bool{
-					Null: true,
-				},
-				Default: types.String{
-					Null:  false,
-					Value: "default",
-				},
-				MaxLength: types.Int64{
-					Null: true,
-				},
-			},
+		Variables: []ConventionVariable{
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("not-generated"),
+				Generated: types.BoolValue(false),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Null(),
+			}),
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("generated"),
+				Generated: types.BoolValue(true),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Value(int64(4)),
+			}),
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("default"),
+				Generated: types.BoolNull(),
+				Default:   types.StringValue("default"),
+				MaxLength: types.Int64Null(),
+			}),
 		},
 	}
 
@@ -127,65 +121,39 @@ func TestGenerateName(t *testing.T) {
 
 	result, diags := generateName(name, inputs, convention)
 	assert.False(t, diags.HasError())
-	assert.Contains(t, result.Value, "foobar-bar-default-")
-	assert.Len(t, result.Value, 23)
+	assert.Contains(t, result.ValueString(), "foobar-bar-default-")
+	assert.Len(t, result.ValueString(), 23)
 }
 
 func TestGenerateNameWithConfiguredNameVariable(t *testing.T) {
 	name := "foobar"
 	convention := Convention{
 		Definition: "(name)-(not-generated)-(default)-(generated)",
-		Variables: []Variable{
-			{
-				Name: types.String{Value: "name"},
-				Generated: types.Bool{
-					Null: true,
-				},
-				Default: types.String{
-					Null: true,
-				},
-				MaxLength: types.Int64{
-					Null:  false,
-					Value: int64(3),
-				},
-			},
-			{
-				Name: types.String{Value: "not-generated"},
-				Generated: types.Bool{
-					Null:  true,
-					Value: false,
-				},
-				Default: types.String{
-					Null: true,
-				},
-				MaxLength: types.Int64{
-					Null: true,
-				},
-			},
-			{
-				Name: types.String{Value: "generated"},
-				Generated: types.Bool{
-					Value: true,
-					Null:  false,
-				},
-				MaxLength: types.Int64{
-					Null:  false,
-					Value: int64(4),
-				},
-			},
-			{
-				Name: types.String{Value: "default"},
-				Generated: types.Bool{
-					Null: true,
-				},
-				Default: types.String{
-					Null:  false,
-					Value: "default",
-				},
-				MaxLength: types.Int64{
-					Null: true,
-				},
-			},
+		Variables: []ConventionVariable{
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("name"),
+				Generated: types.BoolNull(),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Value(int64(3)),
+			}),
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("not-generated"),
+				Generated: types.BoolValue(false),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Null(),
+			}),
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("generated"),
+				Generated: types.BoolValue(true),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Value(int64(4)),
+			}),
+			convertVariableToConventionVariable(Variable{
+				Name:      types.StringValue("default"),
+				Generated: types.BoolNull(),
+				Default:   types.StringValue("default"),
+				MaxLength: types.Int64Null(),
+			}),
 		},
 	}
 
@@ -195,6 +163,6 @@ func TestGenerateNameWithConfiguredNameVariable(t *testing.T) {
 
 	result, diags := generateName(name, inputs, convention)
 	assert.False(t, diags.HasError())
-	assert.Contains(t, result.Value, "foo-bar-default-")
-	assert.Len(t, result.Value, 20)
+	assert.Contains(t, result.ValueString(), "foo-bar-default-")
+	assert.Len(t, result.ValueString(), 20)
 }

@@ -5,80 +5,69 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.ResourceType = nameResourceType{}
-var _ tfsdk.Resource = nameResource{}
+var _ resource.Resource = &NameResource{}
 
-type nameResourceType struct{}
+func NewNameResource() resource.Resource {
+	return &NameResource{}
+}
 
-// Convention Resource schema
-func (r nameResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+type NameResource struct{}
+
+func (r *NameResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_name"
+}
+
+// Schema returns Name Resource schema
+func (r NameResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource is used to get a name with a configured convention",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "The name identifier",
-				Type:                types.StringType,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "This is the required convention option for the name",
 				Required:            true,
-				Type:                types.StringType,
 			},
-			"inputs": {
+			"inputs": schema.MapAttribute{
 				MarkdownDescription: "Map of input values for variables in provider defined convention",
 				Required:            true,
-				Type: types.MapType{
-					ElemType: types.StringType,
-				},
+				ElementType:         types.StringType,
 			},
-			"convention": {
+			"convention": schema.StringAttribute{
 				MarkdownDescription: "The validated convention formated as a json string",
 				Required:            true,
-				Type:                types.StringType,
 			},
-			"result": {
+			"result": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "The result is the generated name.",
-				Type:                types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
-// New resource instance
-func (r nameResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	provider, diags := convertProviderType(in)
-
-	return nameResource{
-		provider: provider,
-	}, diags
-}
-
-type nameResource struct {
-	provider provider
+func (r *NameResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
 }
 
 // Create a new resource
-func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.provider.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
-		)
-		return
-	}
-
-	var resourceData nameResourceData
+func (r NameResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var resourceData NameResourceData
 	diags := req.Config.Get(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -86,7 +75,7 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 	}
 
 	var convention Convention
-	if err := json.Unmarshal([]byte(resourceData.Convention.Value), &convention); err != nil {
+	if err := json.Unmarshal([]byte(resourceData.Convention.ValueString()), &convention); err != nil {
 		resp.Diagnostics.AddError(
 			"Convention Reading Error",
 			err.Error(),
@@ -95,8 +84,8 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 	}
 
 	inputs := map[string]string{}
-	for key, value := range resourceData.Inputs.Elems {
-		inputs[key] = value.(types.String).Value
+	for key, value := range resourceData.Inputs.Elements() {
+		inputs[key] = value.(types.String).ValueString()
 	}
 
 	diags = validateInputs(inputs, convention.Variables)
@@ -105,13 +94,13 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 		return
 	}
 
-	result, diags := generateName(resourceData.Name.Value, inputs, convention)
+	result, diags := generateName(resourceData.Name.ValueString(), inputs, convention)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resourceData.ID = types.String{Value: fmt.Sprintf("%s/%s", convention.Definition, resourceData.Name.Value)}
+	resourceData.ID = types.StringValue(fmt.Sprintf("%s/%s", convention.Definition, resourceData.Name.ValueString()))
 	resourceData.Result = result
 
 	diags = resp.State.Set(ctx, resourceData)
@@ -122,8 +111,8 @@ func (r nameResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 }
 
 // Read resource information
-func (r nameResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	var resourceData nameResourceData
+func (r NameResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var resourceData NameResourceData
 	diags := req.State.Get(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -135,16 +124,8 @@ func (r nameResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 }
 
 // Update resource
-func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.provider.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
-		)
-		return
-	}
-
-	var resourceData nameResourceData
+func (r NameResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var resourceData NameResourceData
 	diags := req.Config.Get(ctx, &resourceData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -152,7 +133,7 @@ func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	}
 
 	var convention Convention
-	if err := json.Unmarshal([]byte(resourceData.Convention.Value), &convention); err != nil {
+	if err := json.Unmarshal([]byte(resourceData.Convention.ValueString()), &convention); err != nil {
 		resp.Diagnostics.AddError(
 			"Convention Reading Error",
 			err.Error(),
@@ -161,8 +142,8 @@ func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	}
 
 	inputs := map[string]string{}
-	for key, value := range resourceData.Inputs.Elems {
-		inputs[key] = value.(types.String).Value
+	for key, value := range resourceData.Inputs.Elements() {
+		inputs[key] = value.(types.String).ValueString()
 	}
 
 	diags = validateInputs(inputs, convention.Variables)
@@ -171,7 +152,7 @@ func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 		return
 	}
 
-	result, diags := generateName(resourceData.Name.Value, inputs, convention)
+	result, diags := generateName(resourceData.Name.ValueString(), inputs, convention)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -187,6 +168,6 @@ func (r nameResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 }
 
 // Delete resource
-func (r nameResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r NameResource) Delete(ctx context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
 	resp.State.RemoveResource(ctx)
 }

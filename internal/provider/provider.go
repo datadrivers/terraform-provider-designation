@@ -2,30 +2,19 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.Provider = &provider{}
+// Ensure DesignationProvider satisfies various provider interfaces.
+var _ provider.Provider = &DesignationProvider{}
 
-func New(version string) func() tfsdk.Provider {
-	return func() tfsdk.Provider {
-		return &provider{
-			version: version,
-		}
-	}
-}
-
-// provider satisfies the tfsdk.Provider interface and usually is included
+// DesignationProvider satisfies the provider.Provider interface and usually is included
 // with all Resource and DataSource implementations.
-type provider struct {
-	// configured is set to true at the end of the Configure method.
-	// This can be used in Resource and DataSource implementations to verify
-	// that the provider was previously configured.
-	configured bool
+type DesignationProvider struct {
 
 	// version is set to the provider version on release, "dev" when the
 	// provider is built and ran locally, and "test" when running acceptance
@@ -33,53 +22,40 @@ type provider struct {
 	version string
 }
 
-// GetSchema defines the arguments and attributes of this provider
-func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{}, nil
+// DesignationProviderModel describes the provider data model.
+type DesignationProviderModel struct{}
+
+func (p *DesignationProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "designation"
+	resp.Version = p.version
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
-	p.configured = true
+// Schema defines the arguments and attributes of this provider
+func (p *DesignationProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{}
 }
 
-// GetResources - Defines provider resources
-func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{
-		"designation_name":       nameResourceType{},
-		"designation_convention": conventionResourceType{},
-	}, nil
+func (p *DesignationProvider) Configure(_ context.Context, _ provider.ConfigureRequest, _ *provider.ConfigureResponse) {
+
 }
 
-// GetDataSources - Defines provider data sources
-func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{}, nil
-}
-
-// convertProviderType is a helper function for NewResource and NewDataSource
-// implementations to associate the concrete provider type. Alternatively,
-// this helper can be skipped and the provider type can be directly type
-// asserted (e.g. provider: in.(*provider)), however using this can prevent
-// potential panics.
-func convertProviderType(in tfsdk.Provider) (provider, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	p, ok := in.(*provider)
-
-	if !ok {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			fmt.Sprintf("While creating the data source or resource, an unexpected provider type (%T) was received. This is always a bug in the provider code and should be reported to the provider developers.", p),
-		)
-		return provider{}, diags
+// Resources - Defines provider resources
+func (p *DesignationProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewConventionResource,
+		NewNameResource,
 	}
+}
 
-	if p == nil {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			"While creating the data source or resource, an unexpected empty provider instance was received. This is always a bug in the provider code and should be reported to the provider developers.",
-		)
-		return provider{}, diags
+// DataSources - Defines provider data sources
+func (p *DesignationProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &DesignationProvider{
+			version: version,
+		}
 	}
-
-	return *p, diags
 }
