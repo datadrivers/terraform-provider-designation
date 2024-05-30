@@ -45,6 +45,55 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 make testacc
 ```
 
+## Local Test
+
+There is a [makefile](./GNUmakefile) to build the provider and place it in repos root dir.
+
+```sh
+make
+```
+
+To use the local build version you need tell terraform where to look for it via a terraform config override.
+
+Create `dev.tfrc` in your terraform code folder (f.e. in [dev.tfrc](./examples/development/dev.tfrc)):
+
+```hcl
+# dev.tfrc
+provider_installation {
+
+  # Use /home/developer/tmp/terraform-nexus as an overridden package directory
+  # for the datadrivers/nexus provider. This disables the version and checksum
+  # verifications for this provider and forces Terraform to look for the
+  # nexus provider plugin in the given directory.
+  # relative path also works, but no variable or ~ evaluation
+  dev_overrides {
+    "datadrivers/nexus" = "../../"
+  }
+
+  # For all other providers, install them directly from their origin provider
+  # registries as normal. If you omit this, Terraform will _only_ use
+  # the dev_overrides block, and so no other providers will be available.
+  direct {}
+}
+```
+
+Tell your shell environment to use override file:
+
+```bash
+export TF_CLI_CONFIG_FILE=dev.tfrc
+```
+
+Now run your terraform commands (`plan` or `apply`), `init` is ***not*** required.
+
+```bash
+# start local nexus
+make start-services
+# run local terraform code
+cd examples/local-development
+terraform plan
+terraform apply
+```
+
 ## Create Release
 
 ```shell script

@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,13 +11,64 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 )
+
+// generateConventionsString generates the json string for the convention
+func generateConventionsString(data *ConventionDataSourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	var variables []ConventionVariable
+	for _, variable := range data.Variables {
+		variables = append(variables, convertVariableToConventionVariable(variable))
+	}
+	convention, err := json.Marshal(Convention{
+		Definition: data.Definition.ValueString(),
+		Variables:  variables,
+	})
+	if err != nil {
+		diags.AddError(
+			"Convention generation Error",
+			err.Error(),
+		)
+		return diags
+	}
+
+	data.Convention = types.StringValue(string(convention))
+	return diags
+}
+
+// validateConvention checks the configured convention to ensure that it can be used without errors
+func validateConvention(data *ConventionDataSourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if !strings.Contains(strings.ToLower(data.Definition.ValueString()), "(name)") {
+		diags.AddError(
+			"Convention Validate Error",
+			"The defined convention must include the block '(name)'.",
+		)
+	}
+	var missingVariables []string
+
+	for _, variable := range data.Variables {
+		block := fmt.Sprintf("(%s)", variable.Name.ValueString())
+		if !strings.Contains(strings.ToLower(data.Definition.ValueString()), block) {
+			missingVariables = append(missingVariables, block)
+		}
+
+	}
+	if len(missingVariables) > 0 {
+		diags.AddError(
+			"Convention Validate Error",
+			fmt.Sprintf("The definied convention must include all variables blocks. Missing blocks: %s", strings.Join(missingVariables, ", ")),
+		)
+	}
+
+	return diags
+}
 
 func convertVariableToConventionVariable(input Variable) ConventionVariable {
 	return ConventionVariable{
 		Name:      input.Name.String(),
-		Generated: input.Generated.String(),
 		Default:   input.Default.String(),
 		MaxLength: input.MaxLength.String(),
 	}
@@ -42,17 +95,6 @@ func convertConventionVariableToVariable(input ConventionVariable) Variable {
 		def = types.StringValue(strings.Trim(input.Default, "\\\""))
 	}
 
-	var generated types.Bool
-	switch input.Generated {
-	case attr.NullValueString:
-		generated = types.BoolNull()
-	case attr.UnknownValueString:
-		generated = types.BoolUnknown()
-	default:
-		boolValue, _ := strconv.ParseBool(input.Generated)
-		generated = types.BoolValue(boolValue)
-	}
-
 	var maxLength types.Int64
 	switch input.MaxLength {
 	case attr.NullValueString:
@@ -67,7 +109,6 @@ func convertConventionVariableToVariable(input ConventionVariable) Variable {
 	return Variable{
 		Name:      name,
 		Default:   def,
-		Generated: generated,
 		MaxLength: maxLength,
 	}
 }
@@ -79,8 +120,8 @@ func validateInputs(inputs map[string]string, variables []ConventionVariable) di
 	missingInputs := []string{}
 	for _, conventionVariable := range variables {
 		variable := convertConventionVariableToVariable(conventionVariable)
-		if variable.Default.IsNull() && (variable.Generated.IsNull() || !variable.Generated.ValueBool()) {
-			if _, ok := inputs[variable.Name.ValueString()]; !ok && variable.Name.ValueString() != "name" {
+		if variable.Default.IsNull() {
+			if _, ok := inputs[variable.Name.ValueString()]; !ok {
 				missingInputs = append(missingInputs, variable.Name.ValueString())
 			}
 		}
@@ -96,29 +137,23 @@ func validateInputs(inputs map[string]string, variables []ConventionVariable) di
 	return diags
 }
 
-// generateName generates the name with the inputs, variables and definition
-func generateName(name string, inputs map[string]string, convention Convention) (types.String, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
+// generateNameWithSeperatedName generates the name with the name, inputs map and definition
+func generateName(inputs map[string]*string, convention Convention) (string, error) {
 	result := convention.Definition
-	variableNameConfigured := false
 
 	for _, conventionVariable := range convention.Variables {
 		variable := convertConventionVariableToVariable(conventionVariable)
 		block := fmt.Sprintf("(%s)", variable.Name.ValueString())
-		replacement := inputs[variable.Name.ValueString()]
-		if variable.Name.ValueString() == "name" {
-			replacement = name
-			variableNameConfigured = true
-		}
+
+		replacement := ""
 		length := 0
+
+		if inputs[variable.Name.ValueString()] != nil {
+			replacement = *inputs[variable.Name.ValueString()]
+		}
 
 		if !variable.MaxLength.IsNull() && variable.MaxLength.ValueInt64() > int64(0) {
 			length = int(variable.MaxLength.ValueInt64())
-		}
-
-		if !variable.Generated.IsNull() && variable.Generated.ValueBool() {
-			replacement = rand.String(length)
 		}
 
 		if replacement == "" {
@@ -128,12 +163,13 @@ func generateName(name string, inputs map[string]string, convention Convention) 
 		if length > 0 && len(replacement) > length {
 			replacement = replacement[0:length]
 		}
+
+		if replacement == "" {
+			return "nil", errors.New(fmt.Sprintf("Missing value %q", variable.Name.ValueString()))
+		}
+
 		result = strings.Replace(result, block, replacement, -1)
 	}
 
-	if !variableNameConfigured {
-		result = strings.Replace(result, "(name)", name, -1)
-	}
-
-	return types.StringValue(result), diags
+	return result, nil
 }

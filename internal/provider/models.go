@@ -4,17 +4,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// NameResourceData -
-type NameResourceData struct {
-	ID         types.String `tfsdk:"id"`
-	Convention types.String `tfsdk:"convention"`
-	Name       types.String `tfsdk:"name"`
-	Inputs     types.Map    `tfsdk:"inputs"`
-	Result     types.String `tfsdk:"result"`
-}
-
-// ConventionResourceData schema struct
-type ConventionResourceData struct {
+// ConventionDataSourceData schema struct
+type ConventionDataSourceData struct {
 	ID         types.String `tfsdk:"id"`
 	Definition types.String `tfsdk:"definition"`
 	Variables  []Variable   `tfsdk:"variables"`
@@ -25,7 +16,6 @@ type ConventionResourceData struct {
 type Variable struct {
 	Name      types.String `tfsdk:"name"`
 	Default   types.String `tfsdk:"default"`
-	Generated types.Bool   `tfsdk:"generated"`
 	MaxLength types.Int64  `tfsdk:"max_length"`
 }
 
@@ -39,6 +29,5 @@ type Convention struct {
 type ConventionVariable struct {
 	Name      string `json:"name"`
 	Default   string `json:"default"`
-	Generated string `json:"generated"`
 	MaxLength string `json:"max_length"`
 }

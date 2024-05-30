@@ -1,6 +1,9 @@
-resource "designation_convention" "this" {
-  definition = "(region)-(stage)-(name)-(random)"
+data "designation_convention" "this" {
+  definition = "(region)-(stage)-(name)-(type)"
   variables = [
+    {
+      name = "name"
+    },
     {
       name    = "region"
       default = "we"
@@ -11,9 +14,8 @@ resource "designation_convention" "this" {
       default    = "dev"
     },
     {
-      name       = "random"
-      generated  = true
-      max_length = 8
+      name    = "type"
+      default = "service"
     },
   ]
 }
