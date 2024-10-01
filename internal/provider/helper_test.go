@@ -8,31 +8,53 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGenerateConventionsString(t *testing.T) {
+	data := ConventionDataSourceData{
+		ID:         types.StringValue("test"),
+		Definition: types.StringValue("(name)-(type)-(default)"),
+		Variables: []Variable{
+			{
+				Name:      types.StringValue("name"),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Null(),
+			},
+			{
+				Name:      types.StringValue("type"),
+				Default:   types.StringNull(),
+				MaxLength: types.Int64Value(int64(3)),
+			},
+			{
+				Name:      types.StringValue("default"),
+				Default:   types.StringValue("default"),
+				MaxLength: types.Int64Null(),
+			},
+		},
+		Convention: types.StringNull(),
+	}
+
+	diags := generateConventionsString(&data)
+	assert.False(t, diags.HasError())
+	expected := "{\"definition\":\"(name)-(type)-(default)\",\"variables\":[{\"name\":\"\\\"name\\\"\",\"default\":\"\\u003cnull\\u003e\",\"max_length\":\"\\u003cnull\\u003e\"},{\"name\":\"\\\"type\\\"\",\"default\":\"\\u003cnull\\u003e\",\"max_length\":\"3\"},{\"name\":\"\\\"default\\\"\",\"default\":\"\\\"default\\\"\",\"max_length\":\"\\u003cnull\\u003e\"}]}"
+	assert.Equal(t, expected, data.Convention.ValueString())
+
+}
+
 func TestVariableConversion(t *testing.T) {
 	var conversionVariables []ConventionVariable
 	var newVariables []Variable
 	variables := []Variable{
 		{
 			Name:      types.StringValue("name"),
-			Generated: types.BoolNull(),
 			Default:   types.StringNull(),
 			MaxLength: types.Int64Value(int64(8)),
 		},
 		{
-			Name:      types.StringValue("not-generated"),
-			Generated: types.BoolValue(false),
+			Name:      types.StringValue("type"),
 			Default:   types.StringNull(),
-			MaxLength: types.Int64Null(),
-		},
-		{
-			Name:      types.StringValue("generated"),
-			Generated: types.BoolValue(true),
-			Default:   types.StringNull(),
-			MaxLength: types.Int64Null(),
+			MaxLength: types.Int64Value(int64(3)),
 		},
 		{
 			Name:      types.StringValue("default"),
-			Generated: types.BoolNull(),
 			Default:   types.StringValue("default"),
 			MaxLength: types.Int64Null(),
 		},
@@ -50,32 +72,24 @@ func TestValidateInputs(t *testing.T) {
 	variables := []ConventionVariable{
 		convertVariableToConventionVariable(Variable{
 			Name:      types.StringValue("name"),
-			Generated: types.BoolNull(),
 			Default:   types.StringNull(),
 			MaxLength: types.Int64Value(int64(8)),
 		}),
 		convertVariableToConventionVariable(Variable{
-			Name:      types.StringValue("not-generated"),
-			Generated: types.BoolValue(false),
+			Name:      types.StringValue("type"),
 			Default:   types.StringNull(),
-			MaxLength: types.Int64Null(),
-		}),
-		convertVariableToConventionVariable(Variable{
-			Name:      types.StringValue("generated"),
-			Generated: types.BoolValue(true),
-			Default:   types.StringNull(),
-			MaxLength: types.Int64Null(),
+			MaxLength: types.Int64Value(int64(3)),
 		}),
 		convertVariableToConventionVariable(Variable{
 			Name:      types.StringValue("default"),
-			Generated: types.BoolNull(),
 			Default:   types.StringValue("default"),
 			MaxLength: types.Int64Null(),
 		}),
 	}
 
 	inputs := map[string]string{
-		"not-generated": "test",
+		"name": "test",
+		"type": "service",
 	}
 
 	diags := validateInputs(inputs, variables)
@@ -90,79 +104,35 @@ func TestValidateInputs(t *testing.T) {
 }
 
 func TestGenerateName(t *testing.T) {
-	name := "foobar"
 	convention := Convention{
-		Definition: "(name)-(not-generated)-(default)-(generated)",
-		Variables: []ConventionVariable{
-			convertVariableToConventionVariable(Variable{
-				Name:      types.StringValue("not-generated"),
-				Generated: types.BoolValue(false),
-				Default:   types.StringNull(),
-				MaxLength: types.Int64Null(),
-			}),
-			convertVariableToConventionVariable(Variable{
-				Name:      types.StringValue("generated"),
-				Generated: types.BoolValue(true),
-				Default:   types.StringNull(),
-				MaxLength: types.Int64Value(int64(4)),
-			}),
-			convertVariableToConventionVariable(Variable{
-				Name:      types.StringValue("default"),
-				Generated: types.BoolNull(),
-				Default:   types.StringValue("default"),
-				MaxLength: types.Int64Null(),
-			}),
-		},
-	}
-
-	inputs := map[string]string{
-		"not-generated": "bar",
-	}
-
-	result, diags := generateName(name, inputs, convention)
-	assert.False(t, diags.HasError())
-	assert.Contains(t, result.ValueString(), "foobar-bar-default-")
-	assert.Len(t, result.ValueString(), 23)
-}
-
-func TestGenerateNameWithConfiguredNameVariable(t *testing.T) {
-	name := "foobar"
-	convention := Convention{
-		Definition: "(name)-(not-generated)-(default)-(generated)",
+		Definition: "(name)-(type)-(default)",
 		Variables: []ConventionVariable{
 			convertVariableToConventionVariable(Variable{
 				Name:      types.StringValue("name"),
-				Generated: types.BoolNull(),
-				Default:   types.StringNull(),
-				MaxLength: types.Int64Value(int64(3)),
-			}),
-			convertVariableToConventionVariable(Variable{
-				Name:      types.StringValue("not-generated"),
-				Generated: types.BoolValue(false),
 				Default:   types.StringNull(),
 				MaxLength: types.Int64Null(),
 			}),
 			convertVariableToConventionVariable(Variable{
-				Name:      types.StringValue("generated"),
-				Generated: types.BoolValue(true),
+				Name:      types.StringValue("type"),
 				Default:   types.StringNull(),
 				MaxLength: types.Int64Value(int64(4)),
 			}),
 			convertVariableToConventionVariable(Variable{
 				Name:      types.StringValue("default"),
-				Generated: types.BoolNull(),
 				Default:   types.StringValue("default"),
 				MaxLength: types.Int64Null(),
 			}),
 		},
 	}
 
-	inputs := map[string]string{
-		"not-generated": "bar",
+	inputName := "foobar"
+	inputType := "service"
+	inputs := map[string]*string{
+		"name": &inputName,
+		"type": &inputType,
 	}
 
-	result, diags := generateName(name, inputs, convention)
-	assert.False(t, diags.HasError())
-	assert.Contains(t, result.ValueString(), "foo-bar-default-")
-	assert.Len(t, result.ValueString(), 20)
+	result, err := generateName(inputs, convention)
+	assert.Equal(t, result, "foobar-serv-default")
+	assert.Nil(t, err)
 }

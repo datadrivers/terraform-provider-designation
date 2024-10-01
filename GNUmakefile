@@ -6,10 +6,10 @@ build: fmt
 	go build -v .
 
 test:
-	go test ./... -v $(TESTARGS)
+	go test ./... -v $(TESTARGS) -cover
 
 testacc:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -cover
 
 vet:
 	@echo "go vet ."

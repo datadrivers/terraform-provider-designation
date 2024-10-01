@@ -45,6 +45,47 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 make testacc
 ```
 
+## Local Test
+
+There is a [makefile](./GNUmakefile) to build the provider and place it in repos root dir.
+
+```sh
+make
+```
+
+To use the local build version you need to tell terraform where to look for it via a terraform config override.
+
+Create `dev.tfrc` in your terraform code folder (e.g. in [dev.tfrc](./examples/development/dev.tfrc)):
+
+```hcl
+# dev.tfrc
+provider_installation {
+  dev_overrides {
+    "datadrivers/designation" = "../../"
+  }
+
+  # For all other providers, install them directly from their origin provider
+  # registries as normal. If you omit this, Terraform will _only_ use
+  # the dev_overrides block, and so no other providers will be available.
+  direct {}
+}
+```
+
+Tell your shell environment to use override file:
+
+```bash
+export TF_CLI_CONFIG_FILE=dev.tfrc
+```
+
+Now run your terraform commands (`plan` or `apply`), `init` is ***not*** required.
+
+```bash
+# run local terraform code
+cd examples/development
+terraform plan
+terraform apply
+```
+
 ## Create Release
 
 ```shell script

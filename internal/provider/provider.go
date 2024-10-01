@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -41,15 +42,21 @@ func (p *DesignationProvider) Configure(_ context.Context, _ provider.ConfigureR
 
 // Resources - Defines provider resources
 func (p *DesignationProvider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewConventionResource,
-		NewNameResource,
-	}
+	return []func() resource.Resource{}
 }
 
 // DataSources - Defines provider data sources
 func (p *DesignationProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewConventionDataSource,
+	}
+}
+
+// Functions - Defines provider functions
+func (p *DesignationProvider) Functions(_ context.Context) []func() function.Function {
+	return []func() function.Function{
+		NewGenerateNameFunction,
+	}
 }
 
 func New(version string) func() provider.Provider {
