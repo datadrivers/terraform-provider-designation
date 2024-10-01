@@ -1,3 +1,9 @@
+## v1.0.0 (2024-10-01)
+
+### Feat
+
+- Use data source for convention and function for generating name (#54)
+
 ## v0.3.4 (2022-12-30)
 
 ### Fix
