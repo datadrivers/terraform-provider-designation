@@ -26,7 +26,7 @@ resource "random_string" "random" {
   override_special = "/@£$"
 }
 
-output "name1" {
+output "app_name" {
   value = provider::designation::generate_name(data.designation_convention.this.convention, {
     "name"   = "one"
     "region" = "ne"

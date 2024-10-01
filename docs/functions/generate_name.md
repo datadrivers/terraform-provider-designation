@@ -3,7 +3,7 @@
 page_title: "generate_name function - terraform-provider-designation"
 subcategory: ""
 description: |-
-  Generate a name for a convention with specified parameters
+  Generate a name for a convention and with specified parameters
 ---
 
 # function: generate_name
