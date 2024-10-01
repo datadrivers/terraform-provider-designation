@@ -3,7 +3,7 @@
 page_title: "generate_name function - terraform-provider-designation"
 subcategory: ""
 description: |-
-  Generate a name for a convention and with specified parameters
+  Generate a name for a convention with specified parameters
 ---
 
 # function: generate_name
@@ -41,7 +41,7 @@ resource "random_string" "random" {
   override_special = "/@£$"
 }
 
-output "name1" {
+output "app_name" {
   value = provider::designation::generate_name(data.designation_convention.this.convention, {
     "name"   = "one"
     "region" = "ne"

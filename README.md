@@ -53,9 +53,9 @@ There is a [makefile](./GNUmakefile) to build the provider and place it in repos
 make
 ```
 
-To use the local build version you need tell terraform where to look for it via a terraform config override.
+To use the local build version you need to tell terraform where to look for it via a terraform config override.
 
-Create `dev.tfrc` in your terraform code folder (f.e. in [dev.tfrc](./examples/development/dev.tfrc)):
+Create `dev.tfrc` in your terraform code folder (e.g. in [dev.tfrc](./examples/development/dev.tfrc)):
 
 ```hcl
 # dev.tfrc
