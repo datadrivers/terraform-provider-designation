@@ -1,3 +1,9 @@
+## v1.0.1 (2024-10-02)
+
+### Fix
+
+- **deps**: bump goreleaser/goreleaser-action from 4 to 6 (#58)
+
 ## v1.0.0 (2024-10-01)
 
 ### Feat
