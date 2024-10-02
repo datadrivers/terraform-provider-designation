@@ -1,3 +1,9 @@
+## v1.0.3 (2024-10-02)
+
+### Fix
+
+- version key is required for configuration
+
 ## v1.0.2 (2024-10-02)
 
 ### Fix
