@@ -1,3 +1,9 @@
+## v1.0.4 (2024-10-02)
+
+### Fix
+
+- remove skip deprecated config
+
 ## v1.0.3 (2024-10-02)
 
 ### Fix
