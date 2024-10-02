@@ -1,3 +1,9 @@
+## v1.0.2 (2024-10-02)
+
+### Fix
+
+- replace deprecated parameter
+
 ## v1.0.1 (2024-10-02)
 
 ### Fix
