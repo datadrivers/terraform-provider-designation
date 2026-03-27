@@ -1,3 +1,11 @@
+## v1.0.5 (2026-03-27)
+
+### Fix
+
+- avoid duplicate test runs on push and pull_request events
+- **goreleaser**: fix deprecated archives.format and broken windows_arm target
+- **ci**: update Go version to 1.24 and add terraform to generate job
+
 ## v1.0.4 (2024-10-02)
 
 ### Fix
