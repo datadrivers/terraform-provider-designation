@@ -63,11 +63,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # list whatever Terraform versions here you would like to support
+        # Test the documented minimum and the current stable Terraform releases.
         terraform:
           - '1.0.*'
-          - '1.1.*'
-          - '1.2.*'
+          - '1.14.*'
+          - '1.15.*'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
