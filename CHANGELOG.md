@@ -1,3 +1,9 @@
+## v1.1.0 (2026-08-19)
+
+### Feat
+
+- **go**: upgrade go to latest stable
+
 ## v1.0.5 (2026-03-27)
 
 ### Fix
