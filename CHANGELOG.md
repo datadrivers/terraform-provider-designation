@@ -1,3 +1,9 @@
+## v1.1.2 (2026-09-10)
+
+### Fix
+
+- **deps**: bump google.golang.org/grpc from 1.82.1 to 1.83.2 (#89)
+
 ## v1.1.1 (2026-09-10)
 
 ### Fix
